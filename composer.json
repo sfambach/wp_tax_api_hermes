@@ -1,0 +1,37 @@
+{
+    "name": "sfambach/wp-tax-api-hermes",
+    "description": "Taxmod Hermes \u2014 reads Hermes parcel notices for the Taxonomy Modeller.",
+    "type": "wordpress-plugin",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "TaxApiHermes\\Core\\": "src/Core/",
+            "TaxApiHermes\\WordPress\\": "src/WordPress/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "TaxApiHermes\\Tests\\": "tests/"
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10",
+        "sfambach/wp-taxonomy-modeler": "dev-main"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/sfambach/wp-taxonomy-modeler"
+        }
+    ]
+}
