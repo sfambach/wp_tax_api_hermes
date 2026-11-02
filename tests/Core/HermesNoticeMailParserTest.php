@@ -7,7 +7,7 @@ use TaxApiHermes\Core\HermesNoticeMailParser;
 use Taxmod\Core\Import\Mail\MimeParser;
 
 /**
- * The fixtures are synthetic, shaped after a real «Erfolgreiche Haustürzustellung» of 2026-10-20.
+ * The fixtures are synthetic, shaped after his real Hermes mails (2021–2026): on the way, comes today, delay, delivered.
  */
 final class HermesNoticeMailParserTest extends TestCase
 {
@@ -37,6 +37,16 @@ final class HermesNoticeMailParserTest extends TestCase
     public function testAParcelWaitingInAPaketShopIsNotDeliveredYet(): void
     {
         self::assertSame('shipped', self::read('h3')['kind']);
+    }
+
+    public function testAForecastDeliveryIsStillOnTheWay(): void
+    {
+        self::assertSame(['shipped', ['H1000000000000000006']], [self::read('h6')['kind'], self::read('h6')['tracking']]);
+    }
+
+    public function testADelayIsStillOnTheWay(): void
+    {
+        self::assertSame(['shipped', ['H1000000000000000007']], [self::read('h7')['kind'], self::read('h7')['tracking']]);
     }
 
     public function testTheTrackingLinkGivesTheNumberWhenTheTextDoesNot(): void

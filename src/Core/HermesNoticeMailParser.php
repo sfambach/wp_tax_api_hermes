@@ -63,16 +63,19 @@ final class HermesNoticeMailParser implements OrderMailParser
 
     /**
      * Subject and first sentence together, because Hermes words the subject freely («Erfolgreiche Haustürzustellung»).
-     * A parcel waiting in a PaketShop is not delivered to the door; it stays «on the way».
+     * ⚠️ *«wird voraussichtlich am Dienstag zugestellt» is a forecast, not a delivery: tested against seven of his real
+     * mails (2021–2026), four «auf dem Weg» read as delivered before. A delay («Wichtige Information zur Zustellung»)
+     * and a parcel waiting in a PaketShop are still on the way.*
      */
     private function kind(MailMessage $mail): ProposalKind
     {
         $said = mb_strtolower($mail->subject . ' ' . ($mail->lines()[0] ?? ''));
+        $forecast = preg_match('/voraussichtlich|erst am|kommt leider/u', $said) === 1;
 
         return match (true) {
-            preg_match('/zugestellt|zustellung erfolgt|haustürzustellung|beim nachbarn|abgestellt/u', $said) === 1
-                && ! str_contains($said, 'paketshop') => ProposalKind::Delivered,
-            preg_match('/unterwegs|kommt heute|kommt morgen|zustellung heute|angekündigt|paketshop|übergeben|auf dem weg/u', $said) === 1 => ProposalKind::Shipped,
+            ! $forecast && ! str_contains($said, 'paketshop')
+                && preg_match('/wurde[^.]*zugestellt|erfolgreich[^.]*zugestellt|haustürzustellung|beim nachbarn|abgestellt|zustellung erfolgt/u', $said) === 1 => ProposalKind::Delivered,
+            preg_match('/unterwegs|auf dem weg|kommt heute|in zustellung|zustellung|angekündigt|paketshop|übergeben|voraussichtlich/u', $said) === 1 => ProposalKind::Shipped,
             default => ProposalKind::NoReceipt,
         };
     }
@@ -87,7 +90,7 @@ final class HermesNoticeMailParser implements OrderMailParser
                 continue;
             }
 
-            if (preg_match('/Sendungsnummer:?\s+([0-9A-Z]{10,40})\b/', $line, $found) === 1
+            if (preg_match('/Sendungsnummer:?\s+([0-9A-Z]{10,40})(?![0-9A-Z])/', $line, $found) === 1
                 || preg_match('/^([0-9A-Z]{10,40})$/', $lines[$k + 1] ?? '', $found) === 1) {
                 return $found[1];
             }
