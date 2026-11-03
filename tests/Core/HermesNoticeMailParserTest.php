@@ -49,6 +49,30 @@ final class HermesNoticeMailParserTest extends TestCase
         self::assertSame(['shipped', ['H1000000000000000007']], [self::read('h7')['kind'], self::read('h7')['tracking']]);
     }
 
+    public function testComesTodayCarriesTheDayItsHoursAndTheShipper(): void
+    {
+        $notice = self::read('h8');
+
+        self::assertSame(['shipped', '2025-04-01', '09:45–11:45', 'Beispielshop'], [$notice['kind'], $notice['expected_delivery'], $notice['delivery_window'], $notice['shipper']]);
+    }
+
+    public function testTheOldLayoutsDelayCarriesTheNewDayWithoutHours(): void
+    {
+        $notice = self::read('h9');
+
+        self::assertSame(['shipped', ['H1000000000000000009'], '2021-12-22', null, null], [$notice['kind'], $notice['tracking'], $notice['expected_delivery'], $notice['delivery_window'], $notice['shipper']]);
+    }
+
+    public function testTheShipperComesFromTheSubject(): void
+    {
+        self::assertSame('Beispielshop', self::read('h6')['shipper']);
+    }
+
+    public function testADeliveryAnnouncesNothing(): void
+    {
+        self::assertSame([null, null], [self::read('h1')['expected_delivery'], self::read('h1')['shipper']]);
+    }
+
     public function testTheTrackingLinkGivesTheNumberWhenTheTextDoesNot(): void
     {
         self::assertSame(['H1000000000000000004'], self::read('h4')['tracking']);

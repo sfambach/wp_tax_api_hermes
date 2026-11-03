@@ -2,9 +2,11 @@
 
 Hermes connection for the [Taxonomy Modeller](https://github.com/sfambach/wp-taxonomy-modeler) (WordPress plugin).
 
-**Status 0.0.1 (needs modeller 0.1.89 and [Taxmod Mail](https://github.com/sfambach/wp_tax_mail) 0.6.0 or later):
-reads Hermes parcel notices («on the way», «delivered») from the mailbox of Taxmod Mail and hands them to the
-modeller's inbox.** A notice carries no shop order number; the modeller gives it to the order with the same tracking
+**Status 0.0.2 (needs modeller 0.1.89 and [Taxmod Mail](https://github.com/sfambach/wp_tax_mail) 0.6.0 or later):
+reads Hermes parcel notices («on the way», «comes today», «delay», «delivered») from the mailbox of Taxmod Mail and
+hands them to the modeller's inbox.** Since 0.0.2 an «on the way» notice also carries the expected day, the delivery
+window and the shipper (D-1131); the modeller writes them to the order from 0.1.143 on, older modellers get the notice
+without them. A notice carries no shop order number; the modeller gives it to the order with the same tracking
 number, from whatever shop (D-1017, D-1020), and never creates an order from it.
 
 Hermes offers recipients no public tracking API (its HSI interface needs a business contract), so the mails are the

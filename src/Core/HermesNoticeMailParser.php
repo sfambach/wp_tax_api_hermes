@@ -48,7 +48,19 @@ final class HermesNoticeMailParser implements OrderMailParser
             return new OrderProposal($this->shopName(), '', ProposalKind::NoReceipt);
         }
 
-        return new OrderProposal($this->shopName(), 'sendung:' . $number, $kind, trackingNumbers: [$number], numberMissing: true);
+        if ($kind !== ProposalKind::Shipped) {
+            return new OrderProposal($this->shopName(), 'sendung:' . $number, $kind, trackingNumbers: [$number], numberMissing: true);
+        }
+
+        [$day, $hours] = $this->announcedDelivery($mail);
+        // ⚠️ *A modeller before 0.1.143 knows no announcement (D-1131) and would refuse the named arguments; it gets the
+        // notice without them.*
+        $announced = property_exists(OrderProposal::class, 'shipper')
+            ? ['expectedDelivery' => $day, 'deliveryWindow' => $hours, 'shipper' => $this->shipper($mail)]
+            : [];
+
+        return new OrderProposal(...['platform' => $this->shopName(), 'orderNumber' => 'sendung:' . $number, 'kind' => $kind,
+            'trackingNumbers' => [$number], 'numberMissing' => true, ...$announced]);
     }
 
     public function kinds(): array
@@ -78,6 +90,62 @@ final class HermesNoticeMailParser implements OrderMailParser
             preg_match('/unterwegs|auf dem weg|kommt heute|in zustellung|zustellung|angekündigt|paketshop|übergeben|voraussichtlich/u', $said) === 1 => ProposalKind::Shipped,
             default => ProposalKind::NoReceipt,
         };
+    }
+
+    /**
+     * The day under «Voraussichtliche Zustellung» and the hours «zwischen 09:45 und 11:45 Uhr» below it (D-1123). The old
+     * layout (2021) splits the day over several lines («Mi.», «22.12.», «Mittwoch, 22.12.2021»), so the first full date
+     * after the heading counts.
+     *
+     * @return array{0: ?string, 1: ?string} Y-m-d and «HH:MM–HH:MM»
+     */
+    private function announcedDelivery(MailMessage $mail): array
+    {
+        $after = false;
+        $day = null;
+
+        foreach ($mail->lines() as $line) {
+            if (! $after) {
+                $after = str_contains($line, 'Voraussichtliche Zustellung');
+
+                continue;
+            }
+
+            if ($day === null && preg_match('/\b(\d{2})\.(\d{2})\.(\d{4})\b/', $line, $date) === 1) {
+                $day = $date[3] . '-' . $date[2] . '-' . $date[1];
+
+                continue;
+            }
+
+            if ($day !== null) {
+                return [$day, preg_match('/zwischen (\d{1,2}:\d{2}) und (\d{1,2}:\d{2}) Uhr/u', $line, $hours) === 1 ? $hours[1] . '–' . $hours[2] : null];
+            }
+        }
+
+        return [$day, null];
+    }
+
+    /**
+     * «Deine Hermes Sendung von AliExpress ist auf dem Weg», «Deine Sendung von Cainiao ist in Zustellung …», or «deine
+     * Sendung von» with the name on the next line. The old layout (2021) names nobody.
+     */
+    private function shipper(MailMessage $mail): ?string
+    {
+        $lines = $mail->lines();
+
+        foreach ([$mail->subject, ...$lines] as $line) {
+            if (preg_match('/Sendung von (.+?) ist (?:auf dem Weg|in Zustellung|unterwegs)/u', $line, $found) === 1) {
+                return trim($found[1]);
+            }
+        }
+
+        foreach ($lines as $k => $line) {
+            if (preg_match('/^deine Sendung von$/iu', trim($line)) === 1 && trim($lines[$k + 1] ?? '') !== '') {
+                return trim($lines[$k + 1]);
+            }
+        }
+
+        return null;
     }
 
     /** «Sendungsnummer H1033…» on one line, or the number on the next; the tracking link carries it after «#». */
