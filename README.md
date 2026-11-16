@@ -1,5 +1,7 @@
 # Taxmod Hermes
 
+> ⚠️ **Abgelöst / superseded (2026-11-16):** this repository is no longer used. Its code lives in [wp_tax_api_mailreaders](https://github.com/sfambach/wp_tax_api_mailreaders). Archived on the owner's decision.
+
 Hermes connection for the [Taxonomy Modeller](https://github.com/sfambach/wp-taxonomy-modeler) (WordPress plugin).
 
 **Status 0.0.2 (needs modeller 0.1.89 and [Taxmod Mail](https://github.com/sfambach/wp_tax_mail) 0.6.0 or later):
